@@ -4,42 +4,43 @@ const { google } = require("googleapis");
 
 const PLUGIN_NAME = "google-booking";
 
-const configuration_workflow = async () => [
-  {
-    name: "BOOKINGS_TABLE",
-    label: "Bookings table name",
-    type: "String",
-    required: true,
-    default: "Bookings"
-  },
-  {
-    name: "USER_TABLE",
-    label: "Users table name",
-    type: "String",
-    required: true,
-    default: "users"
-  },
-  {
-    name: "GOOGLE_CLIENT_ID",
-    label: "Google OAuth Client ID",
-    type: "String",
-    required: true
-  },
-  {
-    name: "GOOGLE_CLIENT_SECRET",
-    label: "Google OAuth Client Secret",
-    type: "String",
-    required: true
-  },
-  {
-    name: "DEFAULT_MEETING_PLATFORM",
-    label: "Default Meeting Platform (Google Meet/Zoom)",
-    type: "String",
-    required: true,
-    default: "Google Meet"
-  }
-];
-
+const configuration_workflow = () => ({
+  run: async () => [
+    {
+      name: "BOOKINGS_TABLE",
+      label: "Bookings table name",
+      type: "String",
+      required: true,
+      default: "Bookings"
+    },
+    {
+      name: "USER_TABLE",
+      label: "Users table name",
+      type: "String",
+      required: true,
+      default: "users"
+    },
+    {
+      name: "GOOGLE_CLIENT_ID",
+      label: "Google OAuth Client ID",
+      type: "String",
+      required: true
+    },
+    {
+      name: "GOOGLE_CLIENT_SECRET",
+      label: "Google OAuth Client Secret",
+      type: "String",
+      required: true
+    },
+    {
+      name: "DEFAULT_MEETING_PLATFORM",
+      label: "Default Meeting Platform (Google Meet/Zoom)",
+      type: "String",
+      required: true,
+      default: "Google Meet"
+    }
+  ]
+});
 // ====================== UTILITY FUNCTIONS ======================
 
 async function ensureTables(pluginConfig) {
