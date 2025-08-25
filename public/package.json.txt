@@ -5,9 +5,29 @@
   "main": "index.js",
   "author": "zzzGodfatherzzz",
   "license": "MIT",
+  "repository": "github:zzzGodfatherzzz/google-calendar-sync",
   "dependencies": {
-    "@saltcorn/data": "^1.3",
+    "@saltcorn/data": "^1.3.0",
     "googleapis": "^133.0.0",
     "express": "^4.19.2"
+  },
+  "engines": {
+    "saltcorn": ">=1.0.0"
+  },
+  "eslintConfig": {
+    "extends": "eslint:recommended",
+    "parserOptions": {
+      "ecmaVersion": 2020
+    },
+    "env": {
+      "node": true,
+      "es6": true
+    },
+    "rules": {
+      "no-unused-vars": "off",
+      "no-case-declarations": "off",
+      "no-empty": "warn",
+      "no-fallthrough": "warn"
+    }
   }
 }
