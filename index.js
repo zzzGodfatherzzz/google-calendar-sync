@@ -1,8 +1,3 @@
-/**
- * Google Calendar Sync plugin for Saltcorn
- * Fully dynamic, portable, public-ready
- */
-
 const { Router } = require("express");
 const { google } = require("googleapis");
 const db = require("@saltcorn/data/db");
@@ -10,7 +5,6 @@ const { getState } = require("@saltcorn/data/db/state");
 
 const PLUGIN_NAME = "google-calendar-sync";
 
-// ============================ CONFIGURATION WORKFLOW ===========================
 const configuration_workflow = async () => [
   {
     name: "BASE_URL",
@@ -75,7 +69,6 @@ const configuration_workflow = async () => [
   },
 ];
 
-// ============================ HELPER FUNCTIONS =================================
 function getPluginConfig() {
   const state = getState();
   return state.getConfig(PLUGIN_NAME);
@@ -199,12 +192,10 @@ async function createGoogleEvent(user, booking, BOOKING_FIELDS, USER_FIELDS) {
   return event;
 }
 
-// ============================ ROUTES ==========================================
 function routes() {
   const { BASE_URL, BOOKING_TABLE, USER_TABLE, BOOKING_FIELDS, USER_FIELDS, pluginConfig } = getDynamicFields();
   const router = new Router();
 
-  // --- OAuth2 Init ---
   router.get("/oauth2/init", async (req,res)=>{
     try {
       if (!req.user?.id) return res.status(401).send("Please log in to link Google Calendar.");
@@ -214,7 +205,6 @@ function routes() {
     } catch(e){console.error(e); return res.status(500).send("OAuth init failed.");}
   });
 
-  // --- OAuth2 Callback ---
   router.get("/oauth2/callback", async (req,res)=>{
     try {
       const { code, state } = req.query;
@@ -229,23 +219,28 @@ function routes() {
     } catch(e){console.error(e); return res.status(500).send("OAuth callback failed.");}
   });
 
-  // --- Webhook Push ---
-  router.post("/bookings/push", async (req,res)=>{
-    try{
-      const secret = req.get("X-Webhook-Secret");
-      if(!secret||secret!==pluginConfig.GOOGLE_SYNC_SECRET) return res.status(401).send("Unauthorized");
-      const { booking_id } = req.body || {};
-      if(!booking_id) return res.status(400).send("Missing booking_id");
-      const booking = await loadBookingById(BOOKING_TABLE, booking_id);
-      if(!booking) return res.status(404).send("Booking not found");
-      const user = await loadUserById(USER_TABLE, USER_FIELDS, booking[BOOKING_FIELDS.host_user_id]);
-      if(!user) return res.status(404).send("Host user not found");
-      const event = await createGoogleEvent(user, booking, BOOKING_FIELDS, USER_FIELDS);
-      return res.json({ok:true,eventId:event.id});
-    } catch(e){console.error(e); return res.status(500).send("Push failed");}
-  });
+ router.post("/bookings/push", async (req,res)=>{
+  try{
+    const secret = req.get("X-Webhook-Secret");
+    if(!secret||secret!==pluginConfig.GOOGLE_SYNC_SECRET) return res.status(401).send("Unauthorized");
+    const { booking_id } = req.body || {};
+    if(!booking_id) return res.status(400).send("Missing booking_id");
+    const booking = await loadBookingById(BOOKING_TABLE, booking_id);
+    if(!booking) return res.status(404).send("Booking not found");
+    
+    const user = await loadUserById(USER_TABLE, USER_FIELDS, booking[BOOKING_FIELDS.host_user_id]);
+    if(!user) return res.status(404).send("Host user not found");   // <- fix applied here
 
-  // --- Manual Admin Push ---
+    const event = await createGoogleEvent(user, booking, BOOKING_FIELDS, USER_FIELDS);
+    return res.json({ok:true, eventId: event.id, meetLink: event.hangoutLink || null});
+  } catch(e) {
+    console.error(e);
+    return res.status(500).send("Push failed");
+  }
+});
+
+
+  // Manual admin push for testing
   router.get("/bookings/push/:id", async (req,res)=>{
     try{
       const state = getState();
@@ -257,12 +252,15 @@ function routes() {
       const user = await loadUserById(USER_TABLE, USER_FIELDS, booking[BOOKING_FIELDS.host_user_id]);
       if(!user) return res.status(404).send("Host user not found");
       const event = await createGoogleEvent(user, booking, BOOKING_FIELDS, USER_FIELDS);
-      return res.send(`Pushed. Event ID: ${event.id}`);
-    } catch(e){console.error(e); return res.status(500).send("Manual push failed");}
+      return res.send(`Pushed. Event ID: ${event.id}, Meet link: ${event.hangoutLink || "none"}`);
+    } catch(e) {
+      console.error(e);
+      return res.status(500).send("Manual push failed");
+    }
   });
 
-  // Saltcorn requires routes to be iterable
-  return [{ route:`/plugin/${PLUGIN_NAME}`, handler:router }];
+  // Return routes array (Saltcorn requires iterable)
+  return [{ route: `/plugin/${PLUGIN_NAME}`, handler: router }];
 }
 
 // ============================ PLUGIN EXPORT ===================================
